@@ -15,6 +15,12 @@ impl Cursor {
         self.position
     }
 
+    pub fn set_position(&mut self, position: Vector2){
+        let x = position.x.clamp(0, 9);
+        let y = position.y.clamp(0, 9);
+        self.position = position;
+    }
+
 
     pub fn reset(&mut self){
         self.position = Vector2{x: 0, y: 0}

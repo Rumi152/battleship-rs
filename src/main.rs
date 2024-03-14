@@ -13,6 +13,8 @@ use vector2::Vector2;
 fn main() {
     let mut manager: GameManager = GameManager::new();
 
+    GameManager::clear_screen();
+
     loop {
         if let Ok(event_read) = read() {
             match event_read {
@@ -37,6 +39,7 @@ struct GameManager {
     p2_board: board::Board,
     cursor: cursor::Cursor,
     setup_phase: bool,
+    held_ship_index: Option<usize>,
 }
 
 impl GameManager {
@@ -48,7 +51,8 @@ impl GameManager {
             p1_board: board::Board::new(),
             p2_board: board::Board::new(),
             cursor: cursor::Cursor::new(),
-            setup_phase: false,
+            setup_phase: true,
+            held_ship_index: None,
         }
     }
 
@@ -60,6 +64,8 @@ impl GameManager {
         )
         .unwrap()
         .queue(crossterm::cursor::MoveTo(0, 0))
+        .unwrap()
+        .queue(crossterm::cursor::Hide)
         .unwrap();
         std::io::Write::flush(&mut stdout).unwrap();
     }
@@ -97,7 +103,9 @@ impl GameManager {
     }
 
     fn frame(&mut self) {
-        GameManager::clear_screen();
+        if self.curtain {
+            GameManager::clear_screen();
+        }
         let mut stdout = std::io::stdout();
 
         if self
@@ -111,6 +119,7 @@ impl GameManager {
                     .contains(&seg.get_position())
             })
         {
+            GameManager::clear_screen();
             stdout
                 .queue(crossterm::cursor::MoveTo(0, 0))
                 .expect("Moving the cursor should work")
@@ -129,6 +138,8 @@ impl GameManager {
                     .contains(&seg.get_position())
             })
         {
+            GameManager::clear_screen();
+            
             stdout
                 .queue(crossterm::cursor::MoveTo(0, 0))
                 .expect("Moving the cursor should work")
@@ -159,6 +170,7 @@ impl GameManager {
                 } else {
                     None
                 },
+                self.held_ship_index,
             );
             self.get_enemy_board().render_enemy_pov(
                 Vector2 { x: 15, y: 0 },
@@ -174,6 +186,172 @@ impl GameManager {
     fn on_click(&mut self, key: KeyCode) {
         if self.curtain {
             self.curtain = false;
+            GameManager::clear_screen();
+        } else if self.setup_phase {
+            match key {
+                KeyCode::Up => {
+                    self.cursor.up();
+                    self.move_held_ship();
+                }
+                KeyCode::Down => {
+                    self.cursor.down();
+                    self.move_held_ship();
+                }
+                KeyCode::Left => {
+                    self.cursor.left();
+                    self.move_held_ship();
+                }
+                KeyCode::Right => {
+                    self.cursor.right();
+                    self.move_held_ship();
+                }
+                KeyCode::Enter => {
+                    if self.held_ship_index.is_some() {
+                        let mut invalid_segments: Vec<Vector2> = Vec::new();
+
+                        //out of bounds
+                        invalid_segments.append(
+                            &mut self
+                                .get_current_board()
+                                .get_ships()
+                                .iter()
+                                .flat_map(|ship| ship.get_segments())
+                                .map(|seg| seg.get_position())
+                                .filter(|pos| pos.x < 0 || pos.x > 9 || pos.y < 0 || pos.y > 9)
+                                .collect(),
+                        );
+
+                        // duplicates
+                        invalid_segments.append(
+                            &mut self
+                                .get_current_board()
+                                .get_ships()
+                                .iter()
+                                .flat_map(|ship| ship.get_segments())
+                                .enumerate()
+                                .map(|(index, seg)| (index, seg.get_position()))
+                                .filter(|(outer_index, outer_seg)| {
+                                    self.get_current_board()
+                                        .get_ships()
+                                        .iter()
+                                        .flat_map(|ship| ship.get_segments())
+                                        .enumerate()
+                                        .map(|(index, seg)| (index, seg.get_position()))
+                                        .filter(|(index, _)| outer_index != index)
+                                        .filter(|(_, seg)| seg == outer_seg)
+                                        .count()
+                                        > 0
+                                })
+                                .map(|(_, seg)| seg)
+                                .collect(),
+                        );
+
+                        //too close
+                        let mut comb_ships: Vec<(Vec<Vector2>, Vec<Vector2>)> = Vec::new();
+                        for k in 0..self.get_current_board().get_ships().len() {
+                            let mut to_cmp: Vec<Vector2> = Vec::new();
+                            for l in 0..self.get_current_board().get_ships().len() {
+                                if k == l {
+                                    continue;
+                                }
+
+                                to_cmp.append(
+                                    &mut self.get_current_board().get_ships()[l]
+                                        .get_segments()
+                                        .iter()
+                                        .map(|seg| seg.get_position())
+                                        .collect(),
+                                );
+                            }
+                            comb_ships.push((
+                                self.get_current_board().get_ships()[k]
+                                    .get_segments()
+                                    .iter()
+                                    .map(|seg| seg.get_position())
+                                    .collect(),
+                                to_cmp,
+                            ))
+                        }
+
+                        for (left, right) in comb_ships {
+                            'pos_comparisons: for left_position in left {
+                                for x in (left_position.x - 1)..(left_position.x + 2) {
+                                    for y in (left_position.y - 1)..(left_position.y + 2) {
+                                        if x < 0 || x > 9 || y < 0 || y > 9 {
+                                            continue;
+                                        }
+
+                                        if right.contains(&Vector2 { x, y }) {
+                                            invalid_segments.push(left_position);
+                                            continue 'pos_comparisons;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if !self.get_current_board().get_ships()[self.held_ship_index.unwrap()]
+                            .get_segments()
+                            .iter()
+                            .any(|seg| invalid_segments.contains(&seg.get_position()))
+                        {
+                            self.held_ship_index = None;
+                        }
+                    } else {
+                        let ship_on_cursor = self
+                            .get_current_board()
+                            .get_ships()
+                            .iter()
+                            .enumerate()
+                            .find(|&(_, ship)| {
+                                ship.get_segments()
+                                    .iter()
+                                    .any(|seg| seg.get_position() == self.cursor.get_position())
+                            });
+
+                        if let Some((index, ship)) = ship_on_cursor {
+                            self.cursor
+                                .set_position(ship.get_segments()[0].get_position());
+                            self.held_ship_index = Some(index);
+                            self.move_held_ship();
+                        }
+                    }
+                }
+                KeyCode::Char('r' | 'R') => {
+                    let ship_on_cursor = self
+                        .get_current_board()
+                        .get_ships()
+                        .iter()
+                        .enumerate()
+                        .find(|&(_, ship)| {
+                            ship.get_segments()
+                                .iter()
+                                .any(|seg| seg.get_position() == self.cursor.get_position())
+                        });
+
+                    if let Some((index, ship)) = ship_on_cursor {
+                        if let Some(held_ship_index) = self.held_ship_index {
+                            self.get_current_board_mut()
+                                .get_ships_mut()
+                                .get_mut(held_ship_index)
+                                .expect(
+                                    "Ships are created on program start and index should be valid",
+                                )
+                                .rotate();
+                        }
+                    }
+                }
+                KeyCode::Esc => {
+                    self.curtain = true;
+                    if self.p2_turn {
+                        self.setup_phase = false;
+                    }
+                    self.p2_turn ^= true;
+
+                    self.cursor.reset();
+                }
+                _ => (),
+            }
         } else if self.shot_this_turn {
             self.shot_this_turn = false;
 
@@ -193,30 +371,40 @@ impl GameManager {
                 self.cursor.reset();
                 self.p2_turn ^= true;
             }
+        } else {
+            match key {
+                KeyCode::Up => self.cursor.up(),
+                KeyCode::Down => self.cursor.down(),
+                KeyCode::Left => self.cursor.left(),
+                KeyCode::Right => self.cursor.right(),
+                KeyCode::Enter => {
+                    let position = self.cursor.get_position();
 
-            return;
-        }
-
-        match key {
-            KeyCode::Up => self.cursor.up(),
-            KeyCode::Down => self.cursor.down(),
-            KeyCode::Left => self.cursor.left(),
-            KeyCode::Right => self.cursor.right(),
-            KeyCode::Enter => {
-                let position = self.cursor.get_position();
-
-                if !(*self.get_enemy_board())
-                    .get_shot_positions()
-                    .iter()
-                    .any(|&x| x == position)
-                {
-                    self.get_enemy_board_mut().shot(position);
-                    self.shot_this_turn = true;
-                    // self.p2_turn ^= true;
-                    // self.cursor.reset();
+                    if !(*self.get_enemy_board())
+                        .get_shot_positions()
+                        .iter()
+                        .any(|&x| x == position)
+                    {
+                        self.get_enemy_board_mut().shot(position);
+                        self.shot_this_turn = true;
+                        // self.p2_turn ^= true;
+                        // self.cursor.reset();
+                    }
                 }
+                _ => {}
             }
-            _ => {}
+        }
+    }
+
+    fn move_held_ship(&mut self) {
+        let pos = self.cursor.get_position();
+
+        if let Some(held_ship_index) = self.held_ship_index {
+            self.get_current_board_mut()
+                .get_ships_mut()
+                .get_mut(held_ship_index)
+                .expect("Ships are created on program start and index should be valid")
+                .move_to(pos);
         }
     }
 }
