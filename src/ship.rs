@@ -13,7 +13,6 @@ impl ShipSegment {
 pub struct Ship {
     segments: Vec<ShipSegment>,
     rotation: Directions,
-    battleship_name: &'static str,
 }
 
 impl Ship {
@@ -24,7 +23,6 @@ impl Ship {
                     position: Vector2 { x: position.x, y: position.y },
                 }],
                 rotation: Directions::Up,
-                battleship_name: "Patroller (1)",
             },
             2 => Ship {
                 segments: vec![
@@ -36,7 +34,6 @@ impl Ship {
                     },
                 ],
                 rotation: Directions::Up,
-                battleship_name: "Destroyer (2)",
             },
             3 => Ship {
                 segments: vec![
@@ -51,7 +48,6 @@ impl Ship {
                     },
                 ],
                 rotation: Directions::Up,
-                battleship_name: "Submarine (3)",
             },
             4 => Ship {
                 segments: vec![
@@ -69,7 +65,6 @@ impl Ship {
                     },
                 ],
                 rotation: Directions::Up,
-                battleship_name: "Battleship (4)",
             },
             5 => Ship {
                 segments: vec![
@@ -90,14 +85,9 @@ impl Ship {
                     },
                 ],
                 rotation: Directions::Up,
-                battleship_name: "Carrier (5)",
             },
             _ => panic!("Invalid ship size"),
         }
-    }
-
-    pub fn get_battleship_name(&self) -> &'static str {
-        self.battleship_name
     }
 
     pub fn move_to(&mut self, position: Vector2) {

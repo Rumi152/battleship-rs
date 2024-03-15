@@ -12,7 +12,7 @@
 
 use crate::{
     cursor::Cursor,
-    ship::{Ship, ShipSegment},
+    ship::Ship,
     vector2::Vector2,
 };
 
@@ -213,13 +213,13 @@ impl Board {
                         "╝ ".to_owned()
                     } else if i == 10 {
                         if cursor.is_some_and(|cursor| cursor.get_position().y == j) {
-                            format!("\x1b[0;33m{}\x1b[0m", j)
+                            format!("\x1b[0;32m{}\x1b[0m", j)
                         } else {
                             j.to_string()
                         }
                     } else if j == -1 {
                         if cursor.is_some_and(|cursor| cursor.get_position().x == i) {
-                            format!("\x1b[0;33m{}\x1b[0m", ('A' as u8 + i as u8) as char)
+                            format!("\x1b[0;32m{}\x1b[0m", ('A' as u8 + i as u8) as char)
                         } else {
                             (('A' as u8 + i as u8) as char).to_string()
                         }
@@ -261,13 +261,13 @@ impl Board {
                     "╝ ".to_owned()
                 } else if i == 10 {
                     if cursor.is_some_and(|cursor| cursor.get_position().y == j) {
-                        format!("\x1b[0;33m{}\x1b[0m", j)
+                        format!("\x1b[0;32m{}\x1b[0m", j)
                     } else {
                         j.to_string()
                     }
                 } else if j == -1 {
                     if cursor.is_some_and(|cursor| cursor.get_position().x == i) {
-                        format!("\x1b[0;33m{}\x1b[0m", ('A' as u8 + i as u8) as char)
+                        format!("\x1b[0;32m{}\x1b[0m", ('A' as u8 + i as u8) as char)
                     } else {
                         (('A' as u8 + i as u8) as char).to_string()
                     }

@@ -7,7 +7,6 @@ use crossterm::{
     event::{read, Event, KeyCode, KeyEventKind},
     QueueableCommand,
 };
-use ship::ShipSegment;
 use vector2::Vector2;
 
 fn main() {
@@ -103,12 +102,26 @@ impl GameManager {
     }
 
     fn frame(&mut self) {
-        if self.curtain {
-            GameManager::clear_screen();
-        }
         let mut stdout = std::io::stdout();
 
-        if self
+        if self.curtain {
+            GameManager::clear_screen();
+
+            stdout
+                .queue(crossterm::cursor::MoveTo(0, 0))
+                .expect("Moving the cursor should work")
+                .queue(crossterm::style::Print(format!(
+                    "Tura gracza {}",
+                    if self.p2_turn { 2 } else { 1 }
+                )))
+                .expect("Printing should work")
+                .queue(crossterm::cursor::MoveTo(0, 1))
+                .expect("Moving the cursor should work")
+                .queue(crossterm::style::Print("[Kliknij dowolny przycisk]"))
+                .expect("Printing should work");
+
+            std::io::Write::flush(&mut stdout).expect("Should be able to flush");
+        } else if self
             .p1_board
             .get_ships()
             .iter()
@@ -124,9 +137,27 @@ impl GameManager {
                 .queue(crossterm::cursor::MoveTo(0, 0))
                 .expect("Moving the cursor should work")
                 .queue(crossterm::style::Print("Gracz 2 Wygrał"))
+                .expect("Printing should work")
+                .queue(crossterm::cursor::MoveTo(0, 1))
+                .expect("Moving the cursor should work")
+                .queue(crossterm::style::Print("Gracz 1:"))
+                .expect("Printing should work")
+                .queue(crossterm::cursor::MoveTo(30, 1))
+                .expect("Moving the cursor should work")
+                .queue(crossterm::style::Print("Gracz 2:"))
                 .expect("Printing should work");
 
+            self.p1_board.shot(Vector2 { x: 69, y: 69 });
+            self.p2_board.shot(Vector2 { x: 69, y: 69 });
+
+            self.p1_board
+                .render_your_pov(Vector2 { x: 0, y: 2 }, None, None);
+            self.p2_board
+                .render_your_pov(Vector2 { x: 15, y: 2 }, None, None);
+
             std::io::Write::flush(&mut stdout).expect("Should be able to flush");
+
+            std::process::exit(0);
         } else if self
             .p2_board
             .get_ships()
@@ -139,29 +170,32 @@ impl GameManager {
             })
         {
             GameManager::clear_screen();
-            
+
             stdout
                 .queue(crossterm::cursor::MoveTo(0, 0))
                 .expect("Moving the cursor should work")
                 .queue(crossterm::style::Print("Gracz 1 Wygrał"))
-                .expect("Printing should work");
-
-            std::io::Write::flush(&mut stdout).expect("Should be able to flush");
-        } else if self.curtain {
-            stdout
-                .queue(crossterm::cursor::MoveTo(0, 0))
-                .expect("Moving the cursor should work")
-                .queue(crossterm::style::Print(format!(
-                    "Tura gracza {}",
-                    if self.p2_turn { 2 } else { 1 }
-                )))
                 .expect("Printing should work")
                 .queue(crossterm::cursor::MoveTo(0, 1))
                 .expect("Moving the cursor should work")
-                .queue(crossterm::style::Print("[Kliknij dowolny przycisk]"))
+                .queue(crossterm::style::Print("Gracz 1:"))
+                .expect("Printing should work")
+                .queue(crossterm::cursor::MoveTo(30, 1))
+                .expect("Moving the cursor should work")
+                .queue(crossterm::style::Print("Gracz 2:"))
                 .expect("Printing should work");
 
+            self.p1_board.shot(Vector2 { x: 69, y: 69 });
+            self.p2_board.shot(Vector2 { x: 69, y: 69 });
+
+            self.p1_board
+                .render_your_pov(Vector2 { x: 0, y: 2 }, None, None);
+            self.p2_board
+                .render_your_pov(Vector2 { x: 15, y: 2 }, None, None);
+
             std::io::Write::flush(&mut stdout).expect("Should be able to flush");
+
+            std::process::exit(0);
         } else {
             self.get_current_board().render_your_pov(
                 Vector2 { x: 0, y: 0 },
@@ -329,7 +363,7 @@ impl GameManager {
                                 .any(|seg| seg.get_position() == self.cursor.get_position())
                         });
 
-                    if let Some((index, ship)) = ship_on_cursor {
+                    if ship_on_cursor.is_some() {
                         if let Some(held_ship_index) = self.held_ship_index {
                             self.get_current_board_mut()
                                 .get_ships_mut()

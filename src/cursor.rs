@@ -18,7 +18,7 @@ impl Cursor {
     pub fn set_position(&mut self, position: Vector2){
         let x = position.x.clamp(0, 9);
         let y = position.y.clamp(0, 9);
-        self.position = position;
+        self.position = Vector2{x, y};
     }
 
 
