@@ -4,23 +4,21 @@ mod direction;
 mod ship;
 mod vector2;
 use crossterm::{
-    event::{read, Event, KeyCode, KeyEventKind},
-    QueueableCommand,
+    event::{read, Event, KeyCode, KeyEventKind}, terminal::enable_raw_mode, QueueableCommand
 };
 use vector2::Vector2;
 
 fn main() {
     let mut manager: GameManager = GameManager::new();
 
+    enable_raw_mode().expect("Should be able to enable raw terminal mode");
     GameManager::clear_screen();
 
     loop {
         if let Ok(event_read) = read() {
             match event_read {
-                Event::Key(event) => {
-                    if event.kind == KeyEventKind::Press {
-                        manager.on_click(event.code);
-                    }
+                Event::Key(event) if event.kind == KeyEventKind::Press => {
+                    manager.on_click(event.code);
                 }
                 _ => {}
             }
