@@ -17,6 +17,8 @@ fn main() {
     GameManager::clear_screen();
 
     loop {
+        manager.frame();
+
         if let Ok(event_read) = read() {
             match event_read {
                 Event::Key(event) if event.kind == KeyEventKind::Press => {
@@ -31,8 +33,6 @@ fn main() {
                 _ => {}
             }
         }
-
-        manager.frame();
     }
 }
 
