@@ -17,74 +17,125 @@ pub struct Ship {
 
 impl Ship {
     pub fn new(ship_size: u8, position: Vector2) -> Ship {
+        Ship::new_with_direction(ship_size, position, Directions::Up)
+    }
+
+    pub fn new_with_direction(ship_size: u8, position: Vector2, direction: Directions) -> Ship {
+        let dir_offset = direction.as_vector2() * -1;
+
         match ship_size {
             1 => Ship {
                 segments: vec![ShipSegment {
-                    position: Vector2 { x: position.x, y: position.y },
+                    position: Vector2 {
+                        x: position.x,
+                        y: position.y,
+                    },
                 }],
-                rotation: Directions::Up,
+                rotation: direction,
             },
             2 => Ship {
                 segments: vec![
                     ShipSegment {
-                    position: Vector2 { x: position.x, y: position.y + 1 },
+                        position: Vector2 {
+                            x: position.x + dir_offset.x,
+                            y: position.y + dir_offset.y,
+                        },
                     },
                     ShipSegment {
-                        position: Vector2 { x: position.x, y: position.y },
+                        position: Vector2 {
+                            x: position.x,
+                            y: position.y,
+                        },
                     },
                 ],
-                rotation: Directions::Up,
+                rotation: direction,
             },
             3 => Ship {
                 segments: vec![
                     ShipSegment {
-                        position: Vector2 { x: position.x, y: position.y + 2 },
+                        position: Vector2 {
+                            x: position.x + 2 * dir_offset.x,
+                            y: position.y + 2 * dir_offset.y,
+                        },
                     },
                     ShipSegment {
-                    position: Vector2 { x: position.x, y: position.y + 1 },
+                        position: Vector2 {
+                            x: position.x + 1 * dir_offset.x,
+                            y: position.y + 1 * dir_offset.y,
+                        },
                     },
                     ShipSegment {
-                        position: Vector2 { x: position.x, y: position.y },
+                        position: Vector2 {
+                            x: position.x,
+                            y: position.y,
+                        },
                     },
                 ],
-                rotation: Directions::Up,
+                rotation: direction,
             },
             4 => Ship {
                 segments: vec![
                     ShipSegment {
-                        position: Vector2 { x: position.x, y: position.y + 3 },
+                        position: Vector2 {
+                            x: position.x + 3 * dir_offset.x,
+                            y: position.y + 3 * dir_offset.y,
+                        },
                     },
                     ShipSegment {
-                        position: Vector2 { x: position.x, y: position.y + 2 },
+                        position: Vector2 {
+                            x: position.x + 2 * dir_offset.x,
+                            y: position.y + 2 * dir_offset.y,
+                        },
                     },
                     ShipSegment {
-                    position: Vector2 { x: position.x, y: position.y + 1 },
+                        position: Vector2 {
+                            x: position.x + 1 * dir_offset.x,
+                            y: position.y + 1 * dir_offset.y,
+                        },
                     },
                     ShipSegment {
-                        position: Vector2 { x: position.x, y: position.y },
+                        position: Vector2 {
+                            x: position.x,
+                            y: position.y,
+                        },
                     },
                 ],
-                rotation: Directions::Up,
+                rotation: direction,
             },
             5 => Ship {
                 segments: vec![
                     ShipSegment {
-                        position: Vector2 { x: position.x, y: position.y + 4 },
+                        position: Vector2 {
+                            x: position.x + 4 * dir_offset.x,
+                            y: position.y + 4 * dir_offset.y,
+                        },
                     },
                     ShipSegment {
-                        position: Vector2 { x: position.x, y: position.y + 3 },
+                        position: Vector2 {
+                            x: position.x + 3 * dir_offset.x,
+                            y: position.y + 3 * dir_offset.y,
+                        },
                     },
                     ShipSegment {
-                        position: Vector2 { x: position.x, y: position.y + 2 },
+                        position: Vector2 {
+                            x: position.x + 2 * dir_offset.x,
+                            y: position.y + 2 * dir_offset.y,
+                        },
                     },
                     ShipSegment {
-                    position: Vector2 { x: position.x, y: position.y + 1},
+                        position: Vector2 {
+                            x: position.x + 1 * dir_offset.x,
+                            y: position.y + 1 * dir_offset.y,
+                        },
                     },
                     ShipSegment {
-                        position: Vector2 { x: position.x, y: position.y },
+                        position: Vector2 {
+                            x: position.x,
+                            y: position.y,
+                        },
                     },
                 ],
-                rotation: Directions::Up,
+                rotation: direction,
             },
             _ => panic!("Invalid ship size"),
         }

@@ -53,8 +53,8 @@ impl GameManager {
             shot_this_turn: false,
             curtain: false,
             p2_turn: false,
-            p1_board: board::Board::new(),
-            p2_board: board::Board::new(),
+            p1_board: board::Board::new_random(),
+            p2_board: board::Board::new_random(),
             cursor: cursor::Cursor::new(),
             setup_phase: true,
             held_ship_index: None,
@@ -226,7 +226,7 @@ impl GameManager {
                         \r\n\
                         Bialy celownik oznacza pudlo\r\n\
                         Czerwony przekreslony kwadrat oznacza trafienie\r\n\
-                        Czerwony zkrzyżowany kwadrat oznacza zatopienie"
+                        Czerwony zkrzyżowany kwadrat oznacza zatopienie",
                     ))
                     .expect("Printing should work");
             }
@@ -275,88 +275,8 @@ impl GameManager {
                 }
                 KeyCode::Enter => {
                     if self.held_ship_index.is_some() {
-                        let mut invalid_segments: Vec<Vector2> = Vec::new();
-
-                        //out of bounds
-                        invalid_segments.append(
-                            &mut self
-                                .get_current_board()
-                                .get_ships()
-                                .iter()
-                                .flat_map(|ship| ship.get_segments())
-                                .map(|seg| seg.get_position())
-                                .filter(|pos| pos.x < 0 || pos.x > 9 || pos.y < 0 || pos.y > 9)
-                                .collect(),
-                        );
-
-                        // duplicates
-                        invalid_segments.append(
-                            &mut self
-                                .get_current_board()
-                                .get_ships()
-                                .iter()
-                                .flat_map(|ship| ship.get_segments())
-                                .enumerate()
-                                .map(|(index, seg)| (index, seg.get_position()))
-                                .filter(|(outer_index, outer_seg)| {
-                                    self.get_current_board()
-                                        .get_ships()
-                                        .iter()
-                                        .flat_map(|ship| ship.get_segments())
-                                        .enumerate()
-                                        .map(|(index, seg)| (index, seg.get_position()))
-                                        .filter(|(index, _)| outer_index != index)
-                                        .filter(|(_, seg)| seg == outer_seg)
-                                        .count()
-                                        > 0
-                                })
-                                .map(|(_, seg)| seg)
-                                .collect(),
-                        );
-
-                        //too close
-                        let mut comb_ships: Vec<(Vec<Vector2>, Vec<Vector2>)> = Vec::new();
-                        for k in 0..self.get_current_board().get_ships().len() {
-                            let mut to_cmp: Vec<Vector2> = Vec::new();
-                            for l in 0..self.get_current_board().get_ships().len() {
-                                if k == l {
-                                    continue;
-                                }
-
-                                to_cmp.append(
-                                    &mut self.get_current_board().get_ships()[l]
-                                        .get_segments()
-                                        .iter()
-                                        .map(|seg| seg.get_position())
-                                        .collect(),
-                                );
-                            }
-                            comb_ships.push((
-                                self.get_current_board().get_ships()[k]
-                                    .get_segments()
-                                    .iter()
-                                    .map(|seg| seg.get_position())
-                                    .collect(),
-                                to_cmp,
-                            ))
-                        }
-
-                        for (left, right) in comb_ships {
-                            'pos_comparisons: for left_position in left {
-                                for x in (left_position.x - 1)..(left_position.x + 2) {
-                                    for y in (left_position.y - 1)..(left_position.y + 2) {
-                                        if x < 0 || x > 9 || y < 0 || y > 9 {
-                                            continue;
-                                        }
-
-                                        if right.contains(&Vector2 { x, y }) {
-                                            invalid_segments.push(left_position);
-                                            continue 'pos_comparisons;
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        let invalid_segments: Vec<Vector2> =
+                            self.get_current_board().get_invalid_segments();
 
                         if !self.get_current_board().get_ships()[self.held_ship_index.unwrap()]
                             .get_segments()

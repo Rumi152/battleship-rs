@@ -1,4 +1,5 @@
 use crate::vector2::Vector2;
+use rand::Rng;
 
 pub enum Directions {
     Up,
@@ -16,7 +17,7 @@ impl Directions {
             Directions::Left => Vector2 { x: -1, y: 0 },
         }
     }
-    
+
     pub fn rotate(&mut self) {
         *self = match self {
             Directions::Up => Directions::Right,
@@ -24,5 +25,16 @@ impl Directions {
             Directions::Down => Directions::Left,
             Directions::Left => Directions::Up,
         };
+    }
+
+    pub fn new_random() -> Self {
+        let mut dir = Directions::Up;
+        let mut rng = rand::rng();
+
+        for i in 0..(rng.random_range(0..4)) {
+            dir.rotate();
+        }
+
+        dir
     }
 }

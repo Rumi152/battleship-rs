@@ -10,11 +10,9 @@
 //[][][][][][][][][][]8
 //[][][][][][][][][][]9
 
-use crate::{
-    cursor::Cursor,
-    ship::Ship,
-    vector2::Vector2,
-};
+use crate::{cursor::Cursor, direction::Directions, ship::Ship, vector2::Vector2};
+
+use rand::Rng;
 
 use crossterm::QueueableCommand;
 use std::io::{stdout, Write};
@@ -47,6 +45,188 @@ impl Board {
             //     Vector2 { x: 0, y: 3 },
             // ],
         }
+    }
+
+    pub fn new_random() -> Board {
+        let mut rng = rand::rng();
+
+        loop {
+            let board = Board {
+                ships: vec![
+                    Ship::new_with_direction(
+                        4,
+                        Vector2 {
+                            x: rng.random_range(0..10),
+                            y: rng.random_range(0..10),
+                        },
+                        Directions::new_random(),
+                    ),
+                    Ship::new_with_direction(
+                        3,
+                        Vector2 {
+                            x: rng.random_range(0..10),
+                            y: rng.random_range(0..10),
+                        },
+                        Directions::new_random(),
+                    ),
+                    Ship::new_with_direction(
+                        3,
+                        Vector2 {
+                            x: rng.random_range(0..10),
+                            y: rng.random_range(0..10),
+                        },
+                        Directions::new_random(),
+                    ),
+                    Ship::new_with_direction(
+                        2,
+                        Vector2 {
+                            x: rng.random_range(0..10),
+                            y: rng.random_range(0..10),
+                        },
+                        Directions::new_random(),
+                    ),
+                    Ship::new_with_direction(
+                        2,
+                        Vector2 {
+                            x: rng.random_range(0..10),
+                            y: rng.random_range(0..10),
+                        },
+                        Directions::new_random(),
+                    ),
+                    Ship::new_with_direction(
+                        2,
+                        Vector2 {
+                            x: rng.random_range(0..10),
+                            y: rng.random_range(0..10),
+                        },
+                        Directions::new_random(),
+                    ),
+                    Ship::new_with_direction(
+                        1,
+                        Vector2 {
+                            x: rng.random_range(0..10),
+                            y: rng.random_range(0..10),
+                        },
+                        Directions::new_random(),
+                    ),
+                    Ship::new_with_direction(
+                        1,
+                        Vector2 {
+                            x: rng.random_range(0..10),
+                            y: rng.random_range(0..10),
+                        },
+                        Directions::new_random(),
+                    ),
+                    Ship::new_with_direction(
+                        1,
+                        Vector2 {
+                            x: rng.random_range(0..10),
+                            y: rng.random_range(0..10),
+                        },
+                        Directions::new_random(),
+                    ),
+                    Ship::new_with_direction(
+                        1,
+                        Vector2 {
+                            x: rng.random_range(0..10),
+                            y: rng.random_range(0..10),
+                        },
+                        Directions::new_random(),
+                    ),
+                ],
+                shot_positions: Vec::new(),
+            };
+
+            if (board.get_invalid_segments().is_empty()) {
+                break board;
+            }
+        }
+    }
+
+    pub fn get_invalid_segments(&self) -> Vec<Vector2> {
+        let mut invalid_segments: Vec<Vector2> = Vec::new();
+        let board: &Board = self;
+
+        //out of bounds
+        invalid_segments.append(
+            &mut board
+                .get_ships()
+                .iter()
+                .flat_map(|ship| ship.get_segments())
+                .map(|seg| seg.get_position())
+                .filter(|pos| pos.x < 0 || pos.x > 9 || pos.y < 0 || pos.y > 9)
+                .collect(),
+        );
+
+        // duplicates
+        invalid_segments.append(
+            &mut board
+                .get_ships()
+                .iter()
+                .flat_map(|ship| ship.get_segments())
+                .enumerate()
+                .map(|(index, seg)| (index, seg.get_position()))
+                .filter(|(outer_index, outer_seg)| {
+                    board
+                        .get_ships()
+                        .iter()
+                        .flat_map(|ship| ship.get_segments())
+                        .enumerate()
+                        .map(|(index, seg)| (index, seg.get_position()))
+                        .filter(|(index, _)| outer_index != index)
+                        .filter(|(_, seg)| seg == outer_seg)
+                        .count()
+                        > 0
+                })
+                .map(|(_, seg)| seg)
+                .collect(),
+        );
+
+        //too close
+        let mut comb_ships: Vec<(Vec<Vector2>, Vec<Vector2>)> = Vec::new();
+        for k in 0..board.get_ships().len() {
+            let mut to_cmp: Vec<Vector2> = Vec::new();
+            for l in 0..board.get_ships().len() {
+                if k == l {
+                    continue;
+                }
+
+                to_cmp.append(
+                    &mut board.get_ships()[l]
+                        .get_segments()
+                        .iter()
+                        .map(|seg| seg.get_position())
+                        .collect(),
+                );
+            }
+            comb_ships.push((
+                board.get_ships()[k]
+                    .get_segments()
+                    .iter()
+                    .map(|seg| seg.get_position())
+                    .collect(),
+                to_cmp,
+            ))
+        }
+
+        for (left, right) in comb_ships {
+            'pos_comparisons: for left_position in left {
+                for x in (left_position.x - 1)..(left_position.x + 2) {
+                    for y in (left_position.y - 1)..(left_position.y + 2) {
+                        if x < 0 || x > 9 || y < 0 || y > 9 {
+                            continue;
+                        }
+
+                        if right.contains(&Vector2 { x, y }) {
+                            invalid_segments.push(left_position);
+                            continue 'pos_comparisons;
+                        }
+                    }
+                }
+            }
+        }
+
+        invalid_segments
     }
 
     pub fn render_your_pov(
@@ -147,7 +327,6 @@ impl Board {
                             }
                         }
                     }
-
 
                     if invalid_segments.contains(&current_iter_pos) {
                         "\x1b[0;31m[]\x1b[m ".to_owned()
