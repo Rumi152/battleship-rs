@@ -4,7 +4,9 @@ mod direction;
 mod ship;
 mod vector2;
 use crossterm::{
-    event::{read, Event, KeyCode, KeyEventKind}, terminal::enable_raw_mode, QueueableCommand
+    event::{read, Event, KeyCode, KeyEventKind, KeyModifiers},
+    terminal::enable_raw_mode,
+    QueueableCommand,
 };
 use vector2::Vector2;
 
@@ -18,6 +20,12 @@ fn main() {
         if let Ok(event_read) = read() {
             match event_read {
                 Event::Key(event) if event.kind == KeyEventKind::Press => {
+                    if (event.code == KeyCode::Char('c') || event.code == KeyCode::Char('C'))
+                        && event.modifiers == KeyModifiers::CONTROL
+                    {
+                        return;
+                    }
+
                     manager.on_click(event.code);
                 }
                 _ => {}
