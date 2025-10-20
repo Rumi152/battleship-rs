@@ -203,6 +203,34 @@ impl GameManager {
 
             std::process::exit(0);
         } else {
+            if self.setup_phase {
+                stdout
+                    .queue(crossterm::cursor::MoveTo(0, 13))
+                    .expect("Moving the cursor should work")
+                    .queue(crossterm::style::Print(
+                        "Uzyj strzalek aby poruszac kursorem\r\n\
+                        Uzyj ENTER aby chwycic statek i ustawic go na miejsce\r\n\
+                        Uzyj r/R aby obrocic chwycony statek\r\n\
+                        Uzyj CTRL-C aby zakonczyc dzialanie programu\r\n\
+                        Uzyj ESCAPE aby zakonczyc ustawianie swoich statkow i oddac ture dla przeciwnika",
+                    ))
+                    .expect("Printing should work");
+            } else {
+                stdout
+                    .queue(crossterm::cursor::MoveTo(0, 13))
+                    .expect("Moving the cursor should work")
+                    .queue(crossterm::style::Print(
+                        "Uzyj strzalek aby poruszac kursorem\r\n\
+                        Uzyj ENTER aby strzlic\r\n\
+                        Uzyj CTRL-C aby zakonczyc dzialanie programu\r\n\
+                        \r\n\
+                        Bialy celownik oznacza pudlo\r\n\
+                        Czerwony przekreslony kwadrat oznacza trafienie\r\n\
+                        Czerwony zkrzyżowany kwadrat oznacza zatopienie"
+                    ))
+                    .expect("Printing should work");
+            }
+
             self.get_current_board().render_your_pov(
                 Vector2 { x: 0, y: 0 },
                 if self.setup_phase {
